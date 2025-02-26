@@ -1,4 +1,5 @@
 import styled from "styled-components/native";
+import { TextInput } from "react-native";
 
 export const Container = styled.View`
   flex: 1;
@@ -43,4 +44,15 @@ export const ListAndButton = styled.View`
     padding: 20px;
     height: 100%;
     align-items: center;
+`
+export const SearchInput = styled(TextInput)`
+    width: 90%;
+    background-color: white;
+    height: 60px;
+    font-size: 16px;
+    margin-top: -30px;
+    border-radius: 20px;
+    padding: 8px 8px 8px 16px;
+
+   
 `

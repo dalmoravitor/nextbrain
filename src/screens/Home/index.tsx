@@ -1,21 +1,74 @@
-import { AddButton, Container, HeaderHome, HeaderTitle } from './styles';
-import { SearchInput } from '../../components/SearchInput';
+import { AddButton, Container, HeaderHome, HeaderTitle, SearchInput } from './styles';
 import { EmptyList } from '../../components/EmptyList';
 import { FlatList, TouchableOpacity } from 'react-native';
 import { PromptCard } from '../../components/PromptCard';
 import {Plus} from 'phosphor-react-native'
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useCallback, useEffect, useState } from 'react';
+import { getAllPrompts } from '../../storage/prompts/promptsGetAll';
+
+interface Prompt {
+    id: string;
+    nome: string;
+    iaUsada: string;
+    data: string;
+    promptTexto: string;
+  }
+
+
+
 
 export function Home() {
+    const [search, setSearch] = useState('')
     const navigation = useNavigation()
-    const prompts = [];
+    const [prompts, setPrompts] = useState<Prompt[]>([]);
+    const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>([]);
 
-    function goToPrompt() {
-        navigation.navigate('prompt')
+
+    function handleSearch(text: string) {
+        setSearch(text);
+    
+        const filtered = prompts.filter((prompt) =>
+        prompt.nome.toLowerCase().includes(text.toLowerCase())
+        );
+        setFilteredPrompts(filtered);
+    }
+
+
+
+    async function loadPrompts() {
+        const data = await getAllPrompts();
+        setPrompts(data)
+        setFilteredPrompts(data);
+    }
+
+    function goToPrompt(id: string) {
+        navigation.navigate('prompt', {id})
     }
 
     function goToCreatePrompt() {
         navigation.navigate('createPrompt');
+    }
+
+    
+    useEffect(() => {
+        const results = prompts.filter((prompt) =>
+            prompt.nome.toLowerCase().includes(search.toLowerCase())
+        );
+        setFilteredPrompts(results);
+      }, [search, prompts]);
+    
+      useFocusEffect(
+        useCallback(() => {
+          loadPrompts();
+        }, [])
+      );
+    function renderItem({ item }: {item: Prompt}) {
+        return (
+            <TouchableOpacity onPress={() => goToPrompt(item.id)}>
+                <PromptCard prompt={item.nome} tag1={item.iaUsada} tag2={item.data}/>
+            </TouchableOpacity>
+        );
     }
 
     
@@ -25,14 +78,14 @@ export function Home() {
             <HeaderHome>
                 <HeaderTitle>Welcome to NextBrain.</HeaderTitle>
             </HeaderHome>
-            <SearchInput />
+            <SearchInput  placeholder="Search your prompt" value={search} onChangeText={handleSearch}/>
             {prompts.length === 0 ? <EmptyList /> : 
             
             
                 <FlatList style={{width: '90%', marginTop: 50}}
-                data={prompts}
-                keyExtractor={item => item.toString()}
-                renderItem={ ({ item }) => <TouchableOpacity onPress={() => goToPrompt()}><PromptCard prompt={item} tag1="ChatGPT" tag2='24/02/2025'/></TouchableOpacity> }
+                data={filteredPrompts}
+                keyExtractor={(item) => item.id}
+                renderItem={renderItem}
                 
                 />
             }

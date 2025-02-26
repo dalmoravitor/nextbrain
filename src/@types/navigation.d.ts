@@ -4,8 +4,12 @@ export declare global {
     interface RootParamList {
       home: undefined;
       createPrompt: undefined;
-      editPrompt: undefined;
-      prompt: undefined;
+      editPrompt: {
+        id: string
+      };
+      prompt: {
+        id: string
+      };
     }
   }
 }

@@ -2,24 +2,77 @@ import {Container, GroupButtons, Button, ContainerData, GroupTitleAndDescription
 import { Header } from '../../components/Header'
 import { Calendar, Copy, PencilLine, Robot, Trash } from 'phosphor-react-native'
 import { Group } from '../../components/PromptCreateDataOrEdit/styles'
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { getAllPrompts } from '../../storage/prompts/promptsGetAll';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect , useState} from 'react';
+import { Alert } from 'react-native';
+import { promptDelete } from '../../storage/prompts/promptDelete';
 
-export function Prompt() {
+interface Prompt {
+    id: string;
+    nome: string;
+    iaUsada: string;
+    data: string;
+    promptTexto: string;
+  }
+
+export function Prompt({route}: any ) {
+    const  {id}  = route.params;
+    const [prompt, setPrompt] = useState<any>(null);
+
+
+
+    
 
     const navigation = useNavigation();
+
+    async function getPromptById(id: string) {
+        const promptsString = await AsyncStorage.getItem('@nextbrain:prompts')
+        const prompts = JSON.parse(promptsString);
+        const prompt = prompts.find((item: { id: string }) => item.id === id);
+        
+        return prompt || null
+    }
+
+
+
     
-      function goToEditPrompt() {
-        navigation.navigate('editPrompt');
+    
+      function goToEditPrompt( ) {
+        navigation.navigate('editPrompt', prompt);
 
       }
 
-      function deletePrompt() {
-        //delete logic
-        navigation.navigate('home');
-
+      async function deletePrompt() {
+        try {
+          await promptDelete(prompt.id); 
+          Alert.alert("Sucesso", "Prompt excluído com sucesso.");
+          navigation.navigate('home'); 
+        } catch (error) {
+          Alert.alert("Erro", "Não foi possível excluir o prompt.");
+        }
       }
+      useEffect(() => {
+        const fetchPrompt = async () => {
+          const fetchedPrompt = await getPromptById(id);
+          if (fetchedPrompt) {
+            setPrompt(fetchedPrompt);
+          } else {
+            Alert.alert("Erro", "Prompt não encontrado.");
+          }
+        };
+      
+        fetchPrompt();
+      }, [id]);
 
-
+      if (!prompt) {
+        return (
+          <Container>
+            <Title>Carregando...</Title>
+          </Container>
+        );
+      }
 
 
     return (
@@ -27,16 +80,16 @@ export function Prompt() {
             <Header />
             <ContainerData>
                 <GroupTitleAndDescription>
-                    <Title>Prompt Title</Title>
-                    <Description>This text right here is the prompt description</Description>
+                    <Title>{prompt.nome}</Title>
+                    <Description>{prompt.descricao}</Description>
                     <GroupTags>
                         <Tag>
                             <Robot size={20} color='#42d9c7' />
-                            <TagText>ChatGPT</TagText>
+                            <TagText>{prompt.iaUsada}</TagText>
                         </Tag>
                         <Tag>
                             <Calendar size={20} color='#42d9c7' />
-                            <TagText>12/12/2021</TagText>
+                            <TagText>{prompt.data}</TagText>
                         </Tag>
                     </GroupTags>
                 </GroupTitleAndDescription>
@@ -50,7 +103,7 @@ export function Prompt() {
 
                 <PromptView>
                     <PromptText>
-                        This is a dedicaded space for the prompt 
+                        {prompt.promptTexto}
                     </PromptText>
                 </PromptView>
 
